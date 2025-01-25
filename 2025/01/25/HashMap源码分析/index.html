@@ -31,7 +31,7 @@
 <meta property="og:image" content="http://example.com/HashMap%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%5Cimage-20250125161801735.png">
 <meta property="og:image" content="http://example.com/HashMap%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%5Cimage-20250125165320667.png">
 <meta property="article:published_time" content="2025-01-25T05:19:40.000Z">
-<meta property="article:modified_time" content="2025-01-25T09:48:55.772Z">
+<meta property="article:modified_time" content="2025-01-25T10:04:26.227Z">
 <meta property="article:author" content="April">
 <meta property="article:tag" content="java">
 <meta name="twitter:card" content="summary_large_image">
@@ -230,7 +230,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          1.3k words
+          1.4k words
         
       </span>
     
@@ -296,6 +296,7 @@
 <h2 id="底层实现"><a href="#底层实现" class="headerlink" title="底层实现"></a>底层实现</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">static</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">Node</span>&lt;K,V&gt; <span class="hljs-keyword">implements</span> <span class="hljs-title class_">Map</span>.Entry&lt;K,V&gt; &#123;<br>    <span class="hljs-keyword">final</span> <span class="hljs-type">int</span> hash;<br>    <span class="hljs-keyword">final</span> K key;<br>    V value;<br>    Node&lt;K,V&gt; next;<br><br>    Node(<span class="hljs-type">int</span> hash, K key, V value, Node&lt;K,V&gt; next) &#123;<br>        <span class="hljs-built_in">this</span>.hash = hash;<br>        <span class="hljs-built_in">this</span>.key = key;<br>        <span class="hljs-built_in">this</span>.value = value;<br>        <span class="hljs-built_in">this</span>.next = next;<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">transient</span> Node&lt;K,V&gt;[] table;<br></code></pre></td></tr></table></figure>
 
 <p>在jdk1.8中，hashmap是由<strong>数组+链表&#x2F;红黑树</strong>构成的。数组中每个位置存放的都是链表或者红黑树。图解如下：</p>
+<p>% asset_img 4243d758576a4191867b557a03044c4f.png HashMap的底层实现原理 %}</p>
 <p><img src="/HashMap%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%5C4243d758576a4191867b557a03044c4f.png" srcset="/img/loading.gif" lazyload alt="HashMap的底层实现原理"></p>
 <h2 id="一些重要参数"><a href="#一些重要参数" class="headerlink" title="一些重要参数"></a>一些重要参数</h2><p><strong>默认初始化大小</strong>：16，这个是指桶的数量，一般都是2的次幂</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">int</span> <span class="hljs-variable">DEFAULT_INITIAL_CAPACITY</span> <span class="hljs-operator">=</span> <span class="hljs-number">1</span> &lt;&lt; <span class="hljs-number">4</span>; <span class="hljs-comment">// aka 16</span><br></code></pre></td></tr></table></figure>
