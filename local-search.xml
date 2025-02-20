@@ -4,6 +4,31 @@
   
   
   <entry>
+    <title>redis是否支持事务</title>
+    <link href="/2025/02/20/redis%E6%98%AF%E5%90%A6%E6%94%AF%E6%8C%81%E4%BA%8B%E5%8A%A1/"/>
+    <url>/2025/02/20/redis%E6%98%AF%E5%90%A6%E6%94%AF%E6%8C%81%E4%BA%8B%E5%8A%A1/</url>
+    
+    <content type="html"><![CDATA[<h2 id="写在前面"><a href="#写在前面" class="headerlink" title="写在前面"></a>写在前面</h2><p>高德测开一面，被问到mysql和redis的事务，mysql的ACID都回答的没有问题，但我当时想到redis好像没有回滚之类的操作，就回答redis不支持事务。</p><p>面试完上网搜才知道，Redis确实没有回滚机制，但是可以保证一组操作批量执行，只是无法做到“一个失败就恢复到初始状态”。</p><p>以下为一些不太完整的总结。</p><h2 id="redis常用命令"><a href="#redis常用命令" class="headerlink" title="redis常用命令"></a>redis常用命令</h2><p><strong>MULTI</strong>：开启一个事务。</p><p>执行成功返回OK。当开启事务后，客户端可以继续向服务器发送任意多条命令，这些命令不会立即被执行，而是被放到一个队列中。当EXEC命令被调用时，所有队列中的命令才会被执行。</p><p><strong>EXEC</strong>：真正执行事务。</p><p>EXEC命令的回复是一个数组，数组中的每个元素都是执行事务中的命令所产生的回复。回复元素的先后顺序和命令发送的先后顺序一致。</p><p><strong>DISCARD</strong>：放弃当前事务。<br>直接清空事务队列，之前的操作都不会真正执行。</p><p><strong>WATCH</strong>：监控一个或多个键。（<strong>在开启事务之前使用</strong>）<br>当开启事务时，如果对WATCH的键进行修改（在EXEC命令执行之前），就会记录当前键的“版本号”。在真正提交事务时（执行EXEC命令时），如果发现当前服务器上的键的版本号已经超过了事务开始时的版本号，就会让事务执行失败。<br>WATCH命令本质上是给EXEC加了个判定条件，属于“乐观锁”。</p><p><strong>UNWATCH</strong>：取消对键的监控。</p><h2 id="redis事务"><a href="#redis事务" class="headerlink" title="redis事务"></a>redis事务</h2><p>Redis 事务本质上是在服务器上搞了⼀个 “事务队列”，每次客⼾端在事务中进⾏⼀个操作，都会把命令先发给服务器，放到 “事务队列” 中(但是并不会⽴即执⾏)<br>服务器收到 EXEC 命令之后，才真正执⾏队列中的所有操作。</p><h2 id="原子性"><a href="#原子性" class="headerlink" title="原子性"></a>原子性</h2><ol><li>执行EXEC命令前，客户端发送的命令本身有错误，redis会报错并记下这个错误，此时，我们还可以继续往里面提交命令，在最后执行EXEC命令时，redis会拒绝执行任何命令，并返回事务失败。——————保障了原子性</li><li>事务操作入队时，命令和操作的数据类型不匹配，但 Redis 实例没有检查出错误。但是，在执行 EXEC 命令以后，Redis 实际执行这些指令，就会报错。<strong>Redis 虽然会对错误指令报错，但是事务依然会把正确的命令执行完，这时候事务的原子性就无法保证了！</strong></li><li>执行EXEC命令，redis故障，导致执行失败。如果开启了AOF日志记录命令，就可以恢复并不执行事务操作，保持原子性，如果未开启日志，则无法保证。</li></ol><h2 id="一致性"><a href="#一致性" class="headerlink" title="一致性"></a>一致性</h2><p>和原子性一样，一致性也需要上述三个情况下分析：</p><ol><li>第一种情况，命令不执行，保障了一致性</li><li>第二种情况，错误命令不执行，正确命令会执行，也保证了一致性</li><li>第三种情况，如果记录了日志，可以清除事务操作，如果没记录日志，那么就可以恢复到事务执行前的状态，也是保持一致性。</li></ol><h2 id="隔离性"><a href="#隔离性" class="headerlink" title="隔离性"></a>隔离性</h2><ol><li>并发操作在EXEC命令执行前，隔离性需要用WATCH机制保证。</li><li>并发操作在EXEC后，可以保证。</li></ol><h2 id="持久性"><a href="#持久性" class="headerlink" title="持久性"></a>持久性</h2><ol><li>如果 Redis 没有使用 RDB 或 AOF，那么事务的持久化属性肯定得不到保证</li><li>如果 Redis 使用了 RDB 模式，那么，在一个事务执行后，而下一次的 RDB 快照还未执行前，如果发生了实例宕机，数据丢失，这种情况下，事务修改的数据也是不能保证持久化的。</li><li>如果 Redis 采用了 AOF 模式·因为 AOF 模式的三种配置选项 no、everysec 和always 都会存在数据丢失的情况。所以，事务的持久性属性也还是得不到保证</li></ol><p><strong>不管 Redis 采用什么持久化模式，事务的持久性属性是得不到保证的。</strong></p><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>redis事务机制可以保证一致性和隔离性，无法保证持久性，但是对于redis而言，本身是内存数据库，所以持久化不是必须属性。<br>原子性需要自己进行检查，尽可能保证。</p>]]></content>
+    
+    
+    <categories>
+      
+      <category>redis</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>redis</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
     <title>为什么SQL语句走了索引，执行却很慢？</title>
     <link href="/2025/02/20/%E4%B8%BA%E4%BB%80%E4%B9%88SQL%E8%AF%AD%E5%8F%A5%E8%B5%B0%E4%BA%86%E7%B4%A2%E5%BC%95%EF%BC%8C%E6%89%A7%E8%A1%8C%E5%8D%B4%E5%BE%88%E6%85%A2%EF%BC%9F/"/>
     <url>/2025/02/20/%E4%B8%BA%E4%BB%80%E4%B9%88SQL%E8%AF%AD%E5%8F%A5%E8%B5%B0%E4%BA%86%E7%B4%A2%E5%BC%95%EF%BC%8C%E6%89%A7%E8%A1%8C%E5%8D%B4%E5%BE%88%E6%85%A2%EF%BC%9F/</url>
